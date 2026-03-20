@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,14 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from './src/screens/HomeScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
-import SearchModal from './src/screens/SearchModal';
+import SearchScreen from './src/screens/SearchScreen';
 import { useBeachStore } from './src/store/useBeachStore';
 import { Beach } from './src/types';
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [searchVisible, setSearchVisible] = useState(false);
   const { loadFavorites, setSelectedBeach } = useBeachStore();
 
   useEffect(() => {
@@ -71,6 +70,8 @@ export default function App() {
               let iconName: keyof typeof Ionicons.glyphMap;
               if (route.name === 'Home') {
                 iconName = focused ? 'water' : 'water-outline';
+              } else if (route.name === 'Search') {
+                iconName = focused ? 'search' : 'search-outline';
               } else {
                 iconName = focused ? 'heart' : 'heart-outline';
               }
@@ -78,26 +79,15 @@ export default function App() {
             },
           })}
         >
-          <Tab.Screen name="Home">
-            {() => (
-              <HomeScreen onOpenSearch={() => setSearchVisible(true)} />
-            )}
-          </Tab.Screen>
+          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen name="Search" component={SearchScreen} />
           <Tab.Screen name="Favorites">
             {() => (
-              <FavoritesScreen
-                onSelectBeach={handleSelectBeach}
-                onOpenSearch={() => setSearchVisible(true)}
-              />
+              <FavoritesScreen onSelectBeach={handleSelectBeach} />
             )}
           </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>
-
-      <SearchModal
-        visible={searchVisible}
-        onClose={() => setSearchVisible(false)}
-      />
     </SafeAreaProvider>
   );
 }

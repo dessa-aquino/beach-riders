@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useBeachStore } from '../store/useBeachStore';
 import ConditionBadge from '../components/ConditionBadge';
 import WindCard from '../components/WindCard';
@@ -13,10 +14,6 @@ import MarineCard from '../components/MarineCard';
 import WeatherForecast from '../components/WeatherForecast';
 import { fetchAllConditions } from '../api/openMeteo';
 import { Beach, CurrentConditions } from '../types';
-
-interface Props {
-  onOpenSearch: () => void;
-}
 
 interface FavHighlightsProps {
   favorites: Beach[];
@@ -106,12 +103,13 @@ function weatherIcon(code: number): keyof typeof Ionicons.glyphMap {
   return 'thunderstorm';
 }
 
-export default function HomeScreen({ onOpenSearch }: Props) {
+export default function HomeScreen() {
   const {
     beachData, loading, error, refreshData, selectedBeach,
     favorites, selectedDate, setSelectedBeach,
   } = useBeachStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (beachData) {
@@ -129,7 +127,7 @@ export default function HomeScreen({ onOpenSearch }: Props) {
         <Ionicons name="water" size={64} color="#1E3A5F" />
         <Text style={styles.emptyTitle}>Beach Riders</Text>
         <Text style={styles.emptySubtitle}>Search for a beach to get started</Text>
-        <TouchableOpacity style={styles.searchBtn} onPress={onOpenSearch}>
+        <TouchableOpacity style={styles.searchBtn} onPress={() => navigation.navigate('Search' as never)}>
           <Ionicons name="search" size={20} color="#FFFFFF" />
           <Text style={styles.searchBtnText}>Find a Beach</Text>
         </TouchableOpacity>
@@ -151,7 +149,7 @@ export default function HomeScreen({ onOpenSearch }: Props) {
     >
       {/* Header */}
       <LinearGradient colors={['#0B1426', '#0D1F3C']} style={styles.header}>
-        <TouchableOpacity style={styles.locationRow} onPress={onOpenSearch}>
+        <TouchableOpacity style={styles.locationRow} onPress={() => navigation.navigate('Search' as never)}>
           <Ionicons name="location" size={18} color="#42A5F5" />
           <Text style={styles.beachName} numberOfLines={1}>{selectedBeach.name}</Text>
           <Ionicons name="chevron-down" size={16} color="#42A5F5" />
