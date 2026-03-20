@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, Animated, ActivityIndicator,
+  RefreshControl, Animated, ActivityIndicator, FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,9 +11,88 @@ import WindCard from '../components/WindCard';
 import TideChart from '../components/TideChart';
 import MarineCard from '../components/MarineCard';
 import WeatherForecast from '../components/WeatherForecast';
+import { fetchAllConditions } from '../api/openMeteo';
+import { Beach, CurrentConditions } from '../types';
 
 interface Props {
   onOpenSearch: () => void;
+}
+
+interface FavHighlightsProps {
+  favorites: Beach[];
+  selectedDate: Date;
+  onSelectBeach: (beach: Beach) => void;
+}
+
+function FavoritesHighlights({ favorites, selectedDate, onSelectBeach }: FavHighlightsProps) {
+  const [conditionsCache, setConditionsCache] = useState<Record<string, CurrentConditions>>({});
+
+  const fetchConditions = useCallback(async () => {
+    const results = await Promise.allSettled(
+      favorites.map(async beach => {
+        // selectedDate is used as a dependency; date-aware fetching will be
+        // enabled once the date param is added to fetchAllConditions
+        const { current } = await fetchAllConditions(
+          beach.coordinates.latitude,
+          beach.coordinates.longitude,
+        );
+        return { id: beach.id, current };
+      })
+    );
+    const next: Record<string, CurrentConditions> = {};
+    results.forEach(r => {
+      if (r.status === 'fulfilled') next[r.value.id] = r.value.current;
+    });
+    setConditionsCache(next);
+  }, [favorites, selectedDate]);
+
+  useEffect(() => {
+    if (favorites.length > 0) fetchConditions();
+  }, [fetchConditions]);
+
+  if (favorites.length === 0) return null;
+
+  return (
+    <View style={hlStyles.section}>
+      <Text style={hlStyles.sectionTitle}>Favorite Beaches</Text>
+      <FlatList
+        horizontal
+        data={favorites}
+        keyExtractor={item => item.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={hlStyles.listContent}
+        renderItem={({ item }) => {
+          const cond = conditionsCache[item.id];
+          return (
+            <TouchableOpacity
+              style={hlStyles.card}
+              onPress={() => onSelectBeach(item)}
+              activeOpacity={0.75}
+            >
+              <Text style={hlStyles.beachName} numberOfLines={2}>{item.name}</Text>
+              {cond ? (
+                <>
+                  <ConditionBadge level={cond.condition} size="sm" />
+                  <View style={hlStyles.statsRow}>
+                    <View style={hlStyles.stat}>
+                      <Ionicons name="thermometer-outline" size={13} color="#64B5F6" />
+                      <Text style={hlStyles.statText}>{Math.round(cond.temperature)}°C</Text>
+                    </View>
+                    <View style={hlStyles.stat}>
+                      <Ionicons name="water-outline" size={13} color="#64B5F6" />
+                      <Text style={hlStyles.statText}>{cond.marine.waveHeight.toFixed(1)}m</Text>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <ActivityIndicator size="small" color="#42A5F5" style={{ marginTop: 8 }} />
+              )}
+            </TouchableOpacity>
+          );
+        }}
+      />
+    </View>
+  );
 }
 
 function weatherIcon(code: number): keyof typeof Ionicons.glyphMap {
@@ -28,7 +107,10 @@ function weatherIcon(code: number): keyof typeof Ionicons.glyphMap {
 }
 
 export default function HomeScreen({ onOpenSearch }: Props) {
-  const { beachData, loading, error, refreshData, selectedBeach } = useBeachStore();
+  const {
+    beachData, loading, error, refreshData, selectedBeach,
+    favorites, selectedDate, setSelectedBeach,
+  } = useBeachStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -137,6 +219,12 @@ export default function HomeScreen({ onOpenSearch }: Props) {
           <MarineCard marine={beachData.current.marine} />
           <TideChart tides={beachData.tides} />
           <WeatherForecast forecast={beachData.forecast} />
+
+          <FavoritesHighlights
+            favorites={favorites}
+            selectedDate={selectedDate}
+            onSelectBeach={setSelectedBeach}
+          />
 
           <View style={{ height: 24 }} />
         </Animated.View>
@@ -251,4 +339,53 @@ const styles = StyleSheet.create({
   },
   sportIcon: { fontSize: 14 },
   sportLabel: { color: '#B0BEC5', fontSize: 12, fontWeight: '600' },
+});
+
+const hlStyles = StyleSheet.create({
+  section: {
+    marginTop: 4,
+  },
+  sectionTitle: {
+    color: '#B0BEC5',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  card: {
+    width: 160,
+    backgroundColor: '#1A2744',
+    borderRadius: 14,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#263254',
+  },
+  beachName: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 2,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  statText: {
+    color: '#90A4AE',
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });

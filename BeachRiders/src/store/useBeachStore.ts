@@ -12,12 +12,14 @@ interface BeachStore {
   beachData: BeachData | null;
   loading: boolean;
   error: string | null;
+  selectedDate: Date;
 
   setSelectedBeach: (beach: Beach) => Promise<void>;
   addFavorite: (beach: Beach) => Promise<void>;
   removeFavorite: (beachId: string) => Promise<void>;
   refreshData: () => Promise<void>;
   loadFavorites: () => Promise<void>;
+  setSelectedDate: (date: Date) => void;
 }
 
 export const useBeachStore = create<BeachStore>((set, get) => ({
@@ -26,6 +28,7 @@ export const useBeachStore = create<BeachStore>((set, get) => ({
   beachData: null,
   loading: false,
   error: null,
+  selectedDate: new Date(),
 
   loadFavorites: async () => {
     try {
@@ -80,4 +83,6 @@ export const useBeachStore = create<BeachStore>((set, get) => ({
     set({ favorites: updated });
     await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
   },
+
+  setSelectedDate: (date: Date) => set({ selectedDate: date }),
 }));
