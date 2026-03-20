@@ -13,6 +13,7 @@ import MarineCard from '../components/MarineCard';
 import WeatherForecast from '../components/WeatherForecast';
 import { fetchAllConditions } from '../api/openMeteo';
 import { Beach, CurrentConditions } from '../types';
+import DateCarousel from '../components/DateCarousel';
 
 interface Props {
   onOpenSearch: () => void;
@@ -109,7 +110,7 @@ function weatherIcon(code: number): keyof typeof Ionicons.glyphMap {
 export default function HomeScreen({ onOpenSearch }: Props) {
   const {
     beachData, loading, error, refreshData, selectedBeach,
-    favorites, selectedDate, setSelectedBeach,
+    favorites, selectedDate, setSelectedDate, setSelectedBeach,
   } = useBeachStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -160,6 +161,8 @@ export default function HomeScreen({ onOpenSearch }: Props) {
           <Text style={styles.updated}>Updated {lastUpdated}</Text>
         )}
       </LinearGradient>
+
+      <DateCarousel selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
       {loading && !beachData && (
         <View style={styles.loadingCenter}>
@@ -218,7 +221,7 @@ export default function HomeScreen({ onOpenSearch }: Props) {
           <WindCard wind={beachData.current.wind} />
           <MarineCard marine={beachData.current.marine} />
           <TideChart tides={beachData.tides} />
-          <WeatherForecast forecast={beachData.forecast} />
+          <WeatherForecast forecast={beachData.forecast} selectedDate={selectedDate} />
 
           <FavoritesHighlights
             favorites={favorites}

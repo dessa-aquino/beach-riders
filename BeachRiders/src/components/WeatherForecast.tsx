@@ -5,6 +5,7 @@ import { WeatherDay } from '../types';
 
 interface Props {
   forecast: WeatherDay[];
+  selectedDate?: Date;
 }
 
 function weatherIcon(code: number): keyof typeof Ionicons.glyphMap {
@@ -42,14 +43,20 @@ function formatDay(dateStr: string): string {
   return d.toLocaleDateString('en', { weekday: 'short' });
 }
 
-export default function WeatherForecast({ forecast }: Props) {
+export default function WeatherForecast({ forecast, selectedDate }: Props) {
+  const selectedDateStr = selectedDate
+    ? selectedDate.toISOString().split('T')[0]
+    : new Date().toISOString().split('T')[0];
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>7-Day Forecast</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {forecast.map((day, i) => (
-          <View key={i} style={styles.dayCard}>
-            <Text style={styles.day}>{formatDay(day.date)}</Text>
+        {forecast.map((day, i) => {
+          const isSelected = day.date === selectedDateStr;
+          return (
+          <View key={i} style={[styles.dayCard, isSelected && styles.dayCardSelected]}>
+            <Text style={[styles.day, isSelected && styles.daySelected]}>{formatDay(day.date)}</Text>
             <Ionicons
               name={weatherIcon(day.weatherCode)}
               size={22}
@@ -66,7 +73,8 @@ export default function WeatherForecast({ forecast }: Props) {
               </View>
             )}
           </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -93,11 +101,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F1C36',
     borderRadius: 12,
   },
+  dayCardSelected: {
+    backgroundColor: '#1A2744',
+    borderWidth: 1.5,
+    borderColor: '#42A5F5',
+  },
   day: {
     color: '#90A4AE',
     fontSize: 11,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  daySelected: {
+    color: '#42A5F5',
+    fontWeight: '700',
   },
   icon: {
     marginVertical: 6,
