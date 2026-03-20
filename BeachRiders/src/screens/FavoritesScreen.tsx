@@ -4,15 +4,16 @@ import {
   StyleSheet, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useBeachStore } from '../store/useBeachStore';
 import { Beach } from '../types';
 
 interface Props {
   onSelectBeach: (beach: Beach) => void;
-  onOpenSearch: () => void;
 }
 
-export default function FavoritesScreen({ onSelectBeach, onOpenSearch }: Props) {
+export default function FavoritesScreen({ onSelectBeach }: Props) {
+  const navigation = useNavigation();
   const { favorites, removeFavorite, selectedBeach } = useBeachStore();
 
   const confirmRemove = (beach: Beach) => {
@@ -34,7 +35,7 @@ export default function FavoritesScreen({ onSelectBeach, onOpenSearch }: Props) 
         <Text style={styles.emptySubtitle}>
           Search for a beach and save it as a favorite for quick access.
         </Text>
-        <TouchableOpacity style={styles.addBtn} onPress={onOpenSearch}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('Search' as never)}>
           <Ionicons name="search" size={18} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Find a Beach</Text>
         </TouchableOpacity>
