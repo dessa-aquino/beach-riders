@@ -8,27 +8,27 @@ const FAVORITES_KEY = '@beach_riders_favorites';
 
 interface BeachStore {
   selectedBeach: Beach | null;
+  selectedDate: Date;
   favorites: Beach[];
   beachData: BeachData | null;
   loading: boolean;
   error: string | null;
-  selectedDate: Date;
 
   setSelectedBeach: (beach: Beach) => Promise<void>;
+  setSelectedDate: (date: Date) => void;
   addFavorite: (beach: Beach) => Promise<void>;
   removeFavorite: (beachId: string) => Promise<void>;
   refreshData: () => Promise<void>;
   loadFavorites: () => Promise<void>;
-  setSelectedDate: (date: Date) => void;
 }
 
 export const useBeachStore = create<BeachStore>((set, get) => ({
   selectedBeach: null,
+  selectedDate: new Date(),
   favorites: [],
   beachData: null,
   loading: false,
   error: null,
-  selectedDate: new Date(),
 
   loadFavorites: async () => {
     try {
@@ -39,6 +39,14 @@ export const useBeachStore = create<BeachStore>((set, get) => ({
     }
   },
 
+  setSelectedDate: (date: Date) => {
+    set({ selectedDate: date });
+    const { selectedBeach, beachData } = get();
+    if (!selectedBeach || !beachData) return;
+    const tides = calculateTides(selectedBeach.coordinates.latitude, date);
+    set({ beachData: { ...beachData, tides } });
+  },
+
   setSelectedBeach: async (beach: Beach) => {
     set({ selectedBeach: beach, loading: true, error: null });
     const { latitude, longitude } = beach.coordinates;
@@ -46,7 +54,7 @@ export const useBeachStore = create<BeachStore>((set, get) => ({
     try {
       const [conditionsResult, tides] = await Promise.all([
         fetchAllConditions(latitude, longitude),
-        Promise.resolve(calculateTides(latitude)),
+        Promise.resolve(calculateTides(latitude, get().selectedDate)),
       ]);
 
       set({
@@ -84,5 +92,4 @@ export const useBeachStore = create<BeachStore>((set, get) => ({
     await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
   },
 
-  setSelectedDate: (date: Date) => set({ selectedDate: date }),
 }));
