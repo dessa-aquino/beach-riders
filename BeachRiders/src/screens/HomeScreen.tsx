@@ -108,9 +108,21 @@ export default function HomeScreen() {
   const {
     beachData, loading, error, refreshData, selectedBeach,
     favorites, selectedDate, setSelectedDate, setSelectedBeach,
+    addFavorite, removeFavorite,
   } = useBeachStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
+
+  const isFavorite = favorites.some(f => f.id === selectedBeach?.id);
+
+  const handleToggleFavorite = useCallback(() => {
+    if (!selectedBeach) return;
+    if (isFavorite) {
+      removeFavorite(selectedBeach.id);
+    } else {
+      addFavorite(selectedBeach);
+    }
+  }, [selectedBeach, isFavorite, addFavorite, removeFavorite]);
 
   useEffect(() => {
     if (beachData) {
@@ -141,26 +153,36 @@ export default function HomeScreen() {
     : null;
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={refreshData} tintColor="#42A5F5" />
-      }
-    >
-      {/* Header */}
+    <View style={{ flex: 1, backgroundColor: '#0B1426' }}>
+      {/* Fixed header — always visible */}
       <LinearGradient colors={['#0B1426', '#0D1F3C']} style={styles.header}>
-        <TouchableOpacity style={styles.locationRow} onPress={() => navigation.navigate('Search' as never)}>
-          <Ionicons name="location" size={18} color="#42A5F5" />
-          <Text style={styles.beachName} numberOfLines={1}>{selectedBeach.name}</Text>
-          <Ionicons name="chevron-down" size={16} color="#42A5F5" />
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.locationRow} onPress={() => navigation.navigate('Search' as never)}>
+            <Ionicons name="location" size={18} color="#42A5F5" />
+            <Text style={styles.beachName} numberOfLines={1}>{selectedBeach.name}</Text>
+            <Ionicons name="chevron-down" size={16} color="#42A5F5" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleToggleFavorite} style={styles.favBtn}>
+            <Ionicons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={24}
+              color={isFavorite ? '#EF5350' : '#B0BEC5'}
+            />
+          </TouchableOpacity>
+        </View>
         {lastUpdated && (
           <Text style={styles.updated}>Updated {lastUpdated}</Text>
         )}
       </LinearGradient>
 
-      <DateCarousel selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refreshData} tintColor="#42A5F5" />
+        }
+      >
+        <DateCarousel selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
       {loading && !beachData && (
         <View style={styles.loadingCenter}>
@@ -230,7 +252,8 @@ export default function HomeScreen() {
           <View style={{ height: 24 }} />
         </Animated.View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -271,10 +294,15 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flex: 1,
   },
   beachName: {
     color: '#FFFFFF',
@@ -340,6 +368,7 @@ const styles = StyleSheet.create({
   },
   sportIcon: { fontSize: 14 },
   sportLabel: { color: '#B0BEC5', fontSize: 12, fontWeight: '600' },
+  favBtn: { padding: 4 },
 });
 
 const hlStyles = StyleSheet.create({
